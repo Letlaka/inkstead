@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-03-crypto-vault  
 **Requires:** gate-02-pwa-offline PASS  
-**Related gaps:** GAP-001, GAP-009, GAP-010, GAP-011, GAP-012, GAP-013, GAP-036, GAP-037, GAP-038
+**Related gaps:** GAP-001, GAP-009, GAP-010, GAP-011, GAP-012, GAP-013, GAP-036, GAP-037, GAP-038, GAP-054, GAP-056
 
 ---
 
@@ -76,181 +76,189 @@ Vault recovery material is client-side cryptographic material.
 
 ## 5. Recommended v1 key hierarchy
 
-The master spec suggested independent random per-document keys. The focused review identifies a key
-distribution cost: independently random keys must themselves be synchronized as wrapped encrypted
-objects.
+The master specification's broad hierarchy is refined here to remove unnecessary synchronized key
+objects and to make total-loss recovery explicit.
 
-For v1, the preferred refinement is a smaller, versioned key hierarchy with deterministic
-domain-separated object keys.
+Preferred v1 candidate:
 
 ```text
-Recovery Secret
+Vault Passphrase
       |
       | Argon2id
       v
-Recovery KEK
+Passphrase KEK
       |
       | unwraps
       v
 Vault Master Key (VMK, random 256-bit)
       |
-      | unwraps
-      v
-Vault Data Key Generation N (VDK-N, random 256-bit)
+      +-- HKDF("generation" || N) -> Generation Key N
+              |
+              +-- HKDF("document" || document_uuid) -> document key
+              |
+              +-- HKDF("blob" || blob_uuid) -> blob key
+              |
+              +-- HKDF("local-index" || device_context) -> local/index key
+
+Emergency Recovery Kit
       |
-      +-- HKDF("document" || document_uuid) -> document key
-      |
-      +-- HKDF("blob" || blob_uuid) -> blob key
-      |
-      +-- HKDF("local-index" || device_context) -> index key where appropriate
+      +-- independently provides/reconstructs the same VMK without depending on Django
 ```
 
-This has several advantages:
+Advantages:
 
-- new replicas synchronize only a small set of wrapped VDK envelopes;
-- no per-entry key envelope can be missing;
-- every object still has a distinct domain-separated encryption key;
-- key generations allow future rotation/migration;
-- credential changes rewrap VMK/VDKs rather than rewriting all content.
+- a new replica needs one root key, not thousands of synchronized per-object keys;
+- document/blob keys remain domain separated;
+- a leaked derived object key does not reveal VMK;
+- a leaked Generation Key does not reveal VMK or other generations;
+- new generations can be introduced without server-side key envelopes;
+- server loss does not destroy the only copy of information required to recover VMK;
+- changing the normal vault passphrase only rewraps VMK.
 
-Before approval, this design must receive explicit cryptographic review.
+This is a refinement of the master specification's recommended hierarchy. Approval of this focused
+spec should be accompanied by an ADR recording the decision while leaving the original master
+document historically intact.
 
 ---
 
 ## 6. Key classes
 
-### 6.1 Recovery Key-Encryption Key (Recovery KEK)
+### 6.1 Vault Passphrase KEK
 
-Derived from high-entropy recovery material using Argon2id.
+Derived from a user-chosen vault passphrase using Argon2id.
 
 Purpose:
 
-- unwrap VMK for disaster/new-device recovery.
+- unwrap VMK from an encrypted passphrase envelope;
+- support normal/new-browser unlock without exposing VMK to Django.
 
-MUST NOT be transmitted to server.
+The passphrase is distinct from the Django account password.
 
 ### 6.2 Vault Master Key (VMK)
 
-Random 256-bit key generated client-side.
+Random 256-bit root key generated client-side.
 
 Purpose:
 
-- wrap/unlock VDK generations;
-- provide stable vault root independent of account password.
+- root of journal data-key derivation;
+- stable vault cryptographic identity independent of Django account password.
 
-VMK itself MUST be stored only in encrypted/wrapped form when persisted.
+VMK MUST never be stored plaintext by Django.
 
-### 6.3 Vault Data Key generation (VDK-N)
+### 6.3 Generation Key N
 
-Random 256-bit key.
+Derived from VMK using HKDF with a canonical generation context.
 
 Purpose:
 
-- root for domain-separated document/blob keys for one key generation.
+- support versioned key generations;
+- allow a compromised generation key to be retired without revealing VMK;
+- provide a stable input for per-object key derivation.
 
-Multiple old generations MAY exist during migration.
+Generation keys are not synchronized as independent random secrets.
 
 ### 6.4 Derived document key
 
-Derived using HKDF from VDK and a domain-separated context containing document UUID.
+Derived from the selected Generation Key and document UUID with a document-specific domain label.
 
-It is never synchronized as a separate random secret.
+It is not synchronized as a separate secret.
 
 ### 6.5 Derived blob key
 
-Derived using HKDF from VDK and blob UUID with a distinct domain label.
+Derived from the selected Generation Key and blob UUID with a distinct blob domain label.
 
-Document and blob keys MUST NOT collide even for the same UUID bytes.
+Document and blob keys MUST NOT collide even for identical UUID bytes.
 
-### 6.6 Device-local unlock KEK
+### 6.6 Local/index key
 
-A device-local passphrase or future WebAuthn PRF may derive/provide a KEK that wraps a local VMK
-copy.
+A device-purpose-separated key MAY be derived for encrypted local search/index state.
 
-It MUST remain separate from the recovery KEK.
+Its derivation must not let exposure of the local index key reveal VMK or content keys.
 
 ---
 
 ## 7. Why derived per-object keys are preferred for v1
 
-The PR #7 review correctly identified that random object keys need synchronized wrapped-key
+PR #7 correctly identified that independently random object keys require synchronized wrapped-key
 envelopes.
 
-Rather than add an envelope for every object, this spec proposes deterministic per-object key
-derivation from a synchronized wrapped VDK generation.
+Inkstead does not need per-object sharing in v1. A hierarchical HKDF design therefore removes an
+entire key-distribution protocol while preserving per-object key separation.
 
-If later review prefers independently random per-object keys, then a normative `ObjectKeyEnvelope`
-must be added containing:
-
-- object UUID;
-- key generation/version;
-- wrapped object key;
-- wrapping-key ID;
-- algorithm/protocol version;
-- authenticated context.
+If future collaboration/sharing requires independently random item keys, introduce a separately
+versioned ObjectKeyEnvelope protocol through an ADR.
 
 There is no valid design where an independently random object key exists only on the creating
 replica.
 
 ---
 
-## 8. Recovery secret requirements
+## 8. Emergency Recovery Kit
 
-Recovery material SHOULD provide at least 128 bits of brute-force-resistant entropy; 192 or 256 bits
-is preferred where usable.
+A recovery mechanism is not sufficient if it depends on the server retaining the only encrypted VMK
+envelope.
 
-The human representation MUST:
+Inkstead MUST provide portable, user-controlled recovery material that can recover VMK after:
 
-- use a standardized/audited encoding or carefully reviewed library;
-- include error-detection/checksum capability where practical;
-- avoid ambiguous characters;
-- be printable;
-- be copyable to a password manager;
-- be confirmable during setup.
+- total server loss;
+- loss/corruption of operational backups;
+- loss of all browser-local Inkstead storage.
 
-Do not invent a home-grown mnemonic scheme casually.
+Two acceptable design families remain for review:
 
-Blocking review decision:
+### Option A - bearer Recovery Kit
 
-- exact entropy;
-- exact encoding;
-- exact dependency/library.
+A versioned recovery artifact directly contains the root secret needed to reconstruct VMK.
 
----
+Properties:
 
-## 9. Local daily unlock
+- simplest total-loss recovery;
+- possession of the kit is equivalent to possession of a master recovery key;
+- kit MUST be treated as highly sensitive;
+- format needs checksum/version/vault identity and safe printable/file representation.
 
-V1 should avoid requiring the long recovery secret every day.
+### Option B - Recovery Key + portable Recovery Bundle
 
-Proposed flow:
+A high-entropy Recovery Key protects a portable bundle containing the wrapped VMK and required
+public parameters.
 
-1. new device recovers VMK using recovery secret;
-2. user creates a local vault-unlock passphrase;
-3. Argon2id derives a device-local KEK;
-4. device-local KEK wraps VMK for that browser profile;
-5. daily unlock uses the local passphrase.
+Properties:
 
-Requirements:
+- bundle can be backed up separately from the secret key;
+- both components must be user-controlled and exportable;
+- neither may exist only on the Inkstead server.
 
-- a short numeric PIN alone is NOT sufficient as the sole offline brute-force barrier unless
-  protected by a hardware/platform primitive;
-- KDF parameters are stored with the local envelope;
-- failed local unlock attempts are delayed in UI, but designers must assume an attacker with a
-  copied browser profile can perform offline guessing;
-- therefore user guidance must favor a meaningful passphrase.
+Gate 03 must choose one model.
 
-Future progressive enhancement:
-
-- WebAuthn PRF/device-backed wrapping key.
+Inkstead MUST NOT label a server-dependent passphrase envelope as the emergency recovery mechanism.
 
 ---
 
-## 10. Recovery envelope
+## 9. Recovery material requirements
 
-The server MAY store:
+Total-loss recovery material SHOULD provide at least 128 bits of effective entropy; 192 or 256 bits
+is preferred.
+
+Human/file representation MUST:
+
+- use a standardized or carefully reviewed encoding;
+- include format version;
+- include error detection/checksum where practical;
+- avoid ambiguous manual transcription;
+- be exportable to a password manager/file;
+- support print/QR representation where practical;
+- be verified during initial setup.
+
+Do not invent an unaudited mnemonic algorithm.
+
+---
+
+## 10. Normal vault-passphrase envelope
+
+For pleasant new-browser unlock, Django MAY store a ciphertext envelope:
 
 ```text
-RecoveryEnvelope
+VaultPassphraseEnvelope
   protocol_version
   kdf_id
   kdf_parameters
@@ -260,33 +268,35 @@ RecoveryEnvelope
   aead_metadata
 ```
 
-The server MUST NOT store the recovery secret/KEK.
+The browser:
 
-The envelope must be authenticated.
+1. receives the envelope;
+2. user enters Vault Passphrase;
+3. derives Passphrase KEK locally;
+4. unwraps VMK locally.
+
+Django never receives the passphrase or KEK.
+
+A stolen envelope permits offline passphrase guessing, so Argon2id calibration and strong
+passphrase guidance are mandatory.
 
 ---
 
-## 11. VDK envelope
+## 11. Daily/local unlock
 
-The server synchronizes encrypted VDK generations.
+After VMK is recovered on a browser, Inkstead may store another VMK envelope locally protected by:
 
-Example:
+- the same Vault Passphrase; or
+- a device-specific local passphrase; or
+- future WebAuthn PRF/device-backed wrapping.
 
-```text
-VaultDataKeyEnvelope
-  key_generation
-  key_id
-  created_at
-  status
-  nonce
-  wrapped_vdk
-  protocol_version
-```
+V1 must select the least confusing safe UX.
 
-`wrapped_vdk` is encrypted under VMK.
+A short numeric PIN MUST NOT be the sole offline brute-force protection unless a hardware-backed
+primitive enforces attempts.
 
-A new replica that recovers VMK can therefore unwrap all required VDK generations and decrypt
-existing content.
+If a local unlock credential is forgotten, the Emergency Recovery Kit can re-establish local access
+and allow a new local/passphrase envelope to be created.
 
 ---
 
@@ -412,22 +422,36 @@ Do not claim secure memory wiping.
 
 ## 19. New-replica bootstrap
 
-Required flow:
+Normal path:
 
 ```text
 authenticate to server
-  -> receive public crypto parameters + RecoveryEnvelope + VDK envelopes
-  -> user provides recovery secret
-  -> derive Recovery KEK
+  -> receive public crypto parameters + VaultPassphraseEnvelope
+  -> user enters Vault Passphrase
+  -> derive Passphrase KEK locally
   -> unwrap VMK
-  -> unwrap VDK generations
-  -> validate a known encrypted verifier
-  -> initialize device-local unlock envelope
+  -> derive current Generation Key(s)
+  -> validate encrypted vault verifier
+  -> initialize local VMK envelope
   -> synchronize ciphertext
   -> decrypt locally
 ```
 
-No server plaintext/key exposure is required.
+Disaster/recovery path:
+
+```text
+server envelope missing/unusable
+  -> user supplies Emergency Recovery Kit
+  -> recover VMK locally
+  -> validate vault verifier or recovered local/export data
+  -> create fresh VaultPassphraseEnvelope
+  -> republish safe key metadata when server is available
+```
+
+A Django login alone never grants decryption.
+
+The protocol must support republishing the current passphrase/key metadata after a server restore
+from an older backup.
 
 ---
 
@@ -446,29 +470,29 @@ It must reveal no secret when stored server-side.
 
 These are distinct operations.
 
-### 21.1 Recovery/passphrase change with no suspected compromise
+### 21.1 Vault passphrase change with no suspected compromise
 
 - keep VMK;
-- derive a new KEK;
+- derive a new Passphrase KEK;
 - rewrap VMK;
-- old recovery envelope is invalidated.
+- replace the server/local VaultPassphraseEnvelope.
 
-This is fast.
+This is fast and does not change the Emergency Recovery Kit unless policy explicitly rotates root
+recovery material.
 
 ### 21.2 Suspected key compromise
 
-Rewrapping alone is insufficient because an attacker may already possess VMK/VDK.
+Rewrapping alone is insufficient if an attacker may already possess the compromised secret.
 
-Compromise rekey requires:
+Threat-specific response:
 
-- new VMK and/or new VDK generation according to threat;
-- new content encrypted under uncompromised keys;
-- migration of existing documents/blobs if retrospective protection is desired;
-- retirement of old key generations after migration;
-- revocation of compromised replica/session.
+- leaked derived object key: replace/re-encrypt the affected object if necessary;
+- leaked Generation Key: move to a new generation derived from VMK and migrate affected content;
+- leaked VMK or Emergency Recovery Kit: generate a new VMK and perform full-vault re-encryption;
+- revoke compromised server session/replica as an additional access-control step.
 
-V1 must at least define and test a manual full-vault rekey procedure before claiming lost-device
-compromise remediation.
+V1 must define and test at least a manual full-vault rekey procedure before claiming lost-device or
+Recovery-Kit compromise remediation.
 
 ---
 
@@ -499,11 +523,20 @@ Old keys MUST remain available only as long as needed for unmigrated ciphertext/
 
 ---
 
-## 24. Backup interaction
+## 24. Backup and restore interaction
 
-Operational server backups may contain old wrapped key envelopes and old ciphertext.
+Operational backups may contain old VaultPassphraseEnvelopes and old ciphertext.
 
-Key rotation cannot retroactively remove material from historical backups.
+After restoring an older server backup:
+
+- an existing current replica may have a newer passphrase envelope/current crypto metadata and must
+  be able to republish it safely;
+- the Emergency Recovery Kit must remain usable even if every server-held passphrase envelope is
+  missing;
+- if neither a current replica nor valid Emergency Recovery Kit exists, an old backup may require
+  the older Vault Passphrase matching its envelope.
+
+Key rotation cannot retroactively remove ciphertext/key metadata from historical backups.
 
 Backup retention and key-retirement policy must account for this.
 
@@ -588,21 +621,24 @@ At Gate 03 only the local portions are required; later gates extend the same can
 
 Minimum:
 
-1. correct recovery secret unwraps VMK;
-2. wrong recovery secret fails;
-3. VDK envelope unwrap succeeds;
-4. document key derivation is deterministic;
-5. document/blob domain keys differ;
-6. object UUID change causes different derived key;
-7. nonce reuse test guard;
-8. modified ciphertext fails;
-9. modified AAD fails;
-10. old protocol fixture decrypts;
-11. unsupported future version fails closed;
-12. local lock terminates worker;
-13. KDF parameters round-trip;
-14. recovery rewrap does not rewrite content;
-15. compromise-rekey fixture migrates successfully.
+1. correct Vault Passphrase unwraps VMK envelope;
+2. wrong Vault Passphrase fails;
+3. Emergency Recovery Kit recovers VMK with the server unavailable;
+4. total-loss recovery works without server-held key envelopes;
+5. Generation Key derivation is deterministic;
+6. document key derivation is deterministic;
+7. document/blob domain keys differ;
+8. object UUID change causes different derived key;
+9. nonce reuse test guard;
+10. modified ciphertext fails;
+11. modified AAD fails;
+12. old protocol fixture decrypts;
+13. unsupported future version fails closed;
+14. local lock terminates worker;
+15. KDF parameters round-trip;
+16. Vault Passphrase rewrap does not rewrite content;
+17. old-server-backup envelope can be repaired from current replica/Recovery Kit;
+18. compromise-rekey fixture migrates successfully.
 
 ---
 
@@ -620,7 +656,9 @@ Must record:
 - CSP/WASM compatibility;
 - crypto fixture hashes;
 - plaintext canary result;
-- recovery/new-replica flow;
+- normal-passphrase and Emergency-Recovery-Kit flows;
+- total-loss recovery test;
+- restored-server key-metadata reconciliation;
 - key-rotation test.
 
 ---
@@ -628,7 +666,8 @@ Must record:
 ## 31. Blocking decisions before approval
 
 - derived per-object key design vs random wrapped object keys;
-- recovery secret entropy/encoding;
+- Emergency Recovery Kit model/format;
+- recovery material entropy/encoding;
 - daily local unlock mechanism;
 - exact Argon2id parameters/calibration process;
 - exact libsodium build;
@@ -643,6 +682,7 @@ Must record:
 Gate 03 cannot pass until:
 
 - a second clean browser can recover all required keys;
+- total-loss recovery succeeds without relying on server-held key envelopes;
 - no unsynchronized random object key exists;
 - local persisted journal data is ciphertext;
 - recovery works with server holding no recovery secret;
