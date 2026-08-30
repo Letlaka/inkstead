@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-04-local-journal  
 **Requires:** gate-03-crypto-vault PASS  
-**Related gaps:** GAP-022, GAP-030, GAP-042, GAP-047
+**Related gaps:** GAP-022, GAP-030, GAP-042, GAP-047, GAP-051, GAP-058
 
 ---
 
@@ -175,7 +175,45 @@ Do not make arbitrary HTML the source of truth.
 
 ---
 
-## 12. Initial editor schema
+## 12. Editor/CRDT integration gate
+
+Tiptap is a ProseMirror-based editor, but that does not automatically make every Tiptap extension
+compatible with Automerge's ProseMirror rich-text binding.
+
+The current `@automerge/prosemirror` project is useful and actively developed, but its published
+package still describes itself as beta and requires a specific schema mapping.
+
+Before Gate 04 implementation is approved, build a disposable prototype that proves:
+
+1. the exact editor stack can initialize from an Automerge document;
+2. every required node/mark maps through the Automerge schema adapter;
+3. two independent editor instances can make concurrent rich-text changes;
+4. formatting and block structure converge;
+5. undo/redo remains local-user understandable;
+6. serialization survives reload;
+7. unsupported Tiptap extensions are identified before product code depends on them;
+8. CSP/Trusted Types/style policy remains compatible.
+
+Decision options:
+
+### Option A - Tiptap + @automerge/prosemirror
+
+Keep Tiptap only if the required Tiptap feature set is proven compatible.
+
+### Option B - direct ProseMirror + @automerge/prosemirror
+
+Prefer this if Tiptap adds schema/transaction behavior that cannot be safely mapped.
+
+### Option C - different CRDT/editor integration
+
+Requires an ADR and equivalent convergence/security evidence.
+
+Product code MUST NOT manually translate arbitrary Tiptap JSON diffs into Automerge operations as a
+home-grown synchronization layer.
+
+---
+
+## 13. Initial editor schema
 
 Allow:
 
@@ -492,7 +530,9 @@ Minimum:
 11. client clock changes do not alter security sequence;
 12. local persistence failure preserves editor content;
 13. mobile editor flow;
-14. keyboard accessibility smoke test.
+14. keyboard accessibility smoke test;
+15. Tiptap/ProseMirror/Automerge prototype passes concurrent rich-text convergence;
+16. CSP style policy works without broad unsafe-inline.
 
 ---
 
@@ -522,6 +562,8 @@ Must contain:
 - mood representation;
 - revision-history v1 scope;
 - exact safe link schemes;
+- Tiptap vs direct ProseMirror after the Automerge binding spike;
+- exact supported ProseMirror schema/extensions;
 - draft creation threshold;
 - prompt/streak v1 scope.
 
@@ -537,4 +579,5 @@ Gate 04 passes when:
 - journal-sensitive text does not leak into browser/network metadata;
 - date semantics are deterministic;
 - mobile/keyboard flows work;
+- the chosen rich-text editor has proven CRDT binding behavior rather than assumed compatibility;
 - no server code is needed for ordinary writing.
