@@ -178,8 +178,8 @@ Architecture-changing implementation MUST include an ADR when required.
 | 01 | Product scope and end-to-end user flows | Gate 00 dependency |
 | 02 | Cookiecutter platform foundation | Gate 00 |
 | 03 | Authentication, sessions and browser security | Gate 01 |
-| 04 | Cryptography, key management and recovery | Gate 02 |
-| 05 | PWA, local storage, offline and update lifecycle | Gate 03 |
+| 04 | PWA, local storage, offline and update lifecycle | Gate 02 |
+| 05 | Cryptography, key management and recovery | Gate 03 |
 | 06 | Journal domain, editor and metadata semantics | Gate 04 |
 | 07 | CRDT, sync, replica and compaction protocol | Gate 05 |
 | 08 | Attachments, media and file security | Gate 06 |
