@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-08-operations  
 **Requires:** gate-07-data-lifecycle PASS  
-**Related gaps:** GAP-025, GAP-028, GAP-031, GAP-045, GAP-049, GAP-050, GAP-054, GAP-056, GAP-057
+**Related gaps:** GAP-025, GAP-028, GAP-031, GAP-045, GAP-049, GAP-050, GAP-054, GAP-056, GAP-057, GAP-061
 
 ---
 
@@ -527,7 +527,28 @@ Emergency process still runs:
 
 ---
 
-## 33. Resource limits / DoS
+## 33. Django transaction boundaries
+
+Cookiecutter enables PostgreSQL `ATOMIC_REQUESTS=True`.
+
+That is useful for ordinary application writes but must be reviewed for endpoints that should not
+hold an open database transaction across long work.
+
+Candidates for explicit non-atomic/read-only handling include:
+
+- large encrypted blob upload/download paths;
+- health checks;
+- streaming responses;
+- other endpoints whose database authorization lookup can finish before long byte transfer.
+
+Use Django's supported `non_atomic_requests`/explicit transaction boundaries only where measured
+and safe.
+
+Do not globally disable Cookiecutter's transaction behavior merely for optimization.
+
+---
+
+## 39. Resource limits / DoS
 
 Production SHOULD set practical:
 
@@ -577,7 +598,8 @@ Minimum:
 15. plaintext canary absent from backup;
 16. total-loss Recovery Kit path succeeds with server key envelope removed;
 17. older-backup key metadata is repaired from current replica/Recovery Kit;
-18. append-only sync history storage use is included in capacity/backup measurements.
+18. append-only sync history storage use is included in capacity/backup measurements;
+19. long blob transfer does not hold an unnecessary ATOMIC_REQUESTS database transaction.
 
 ---
 
