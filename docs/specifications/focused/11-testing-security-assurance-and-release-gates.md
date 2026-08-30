@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gates:** gate-09-assurance, gate-10-v1  
 **Requires:** gate-08-operations PASS  
-**Related gaps:** GAP-004, GAP-036, GAP-040, GAP-048
+**Related gaps:** GAP-004, GAP-036, GAP-040, GAP-048, GAP-051, GAP-052, GAP-053, GAP-054, GAP-055, GAP-057, GAP-058, GAP-059, GAP-060, GAP-061
 
 ---
 
@@ -179,7 +179,9 @@ Keep deterministic scenarios for:
 - purge markers;
 - snapshot bootstrap.
 
-A dependency upgrade of Automerge must pass existing fixtures before merge.
+A dependency upgrade of Automerge or its ProseMirror binding must pass existing fixtures before
+merge. The editor/CRDT binding remains pinned until a newer version passes the same convergence
+matrix.
 
 ---
 
@@ -427,7 +429,23 @@ Test:
 
 ---
 
-## 25. Dependency scanning
+## 25. Recovery-assurance tests
+
+Permanent recovery scenarios include:
+
+1. normal Vault Passphrase + server envelope;
+2. new browser with valid server envelope;
+3. Emergency Recovery Kit with server envelope deleted;
+4. complete test server rebuilt from operational backup;
+5. older server backup restored after a newer passphrase-envelope update;
+6. existing replica repairs restored server metadata;
+7. no existing replica survives and Emergency Recovery Kit remains sufficient.
+
+A recovery mechanism that works only while the original server database survives does not pass.
+
+---
+
+## 26. Dependency scanning
 
 Select maintained tools during Gate 00/assurance setup.
 
@@ -442,7 +460,7 @@ No one scanner is treated as complete.
 
 ---
 
-## 26. Container scanning
+## 27. Container scanning
 
 Use a maintained scanner such as Trivy or equivalent.
 
@@ -454,7 +472,7 @@ Block stable release on unresolved critical vulnerabilities unless:
 
 ---
 
-## 27. SBOM
+## 28. SBOM
 
 Stable release SHOULD publish an SBOM.
 
@@ -467,7 +485,7 @@ Include application and container dependencies where tooling supports it.
 
 ---
 
-## 28. Secret scanning
+## 29. Secret scanning
 
 Repository history/PR checks should detect:
 
@@ -480,7 +498,7 @@ Known test fixtures must be safely allowlisted rather than disabling scanning br
 
 ---
 
-## 29. ASVS 5.0
+## 30. ASVS 5.0
 
 Maintain:
 
@@ -510,7 +528,7 @@ Each item is:
 
 ---
 
-## 30. Threat-model review
+## 31. Threat-model review
 
 Threat model is reviewed:
 
@@ -524,7 +542,7 @@ New external integrations require threat-model update before implementation.
 
 ---
 
-## 31. Security claims review
+## 32. Security claims review
 
 Before release, verify public documentation does not overclaim.
 
@@ -539,7 +557,7 @@ Specifically do not claim:
 
 ---
 
-## 32. Release artifact integrity
+## 33. Release artifact integrity
 
 Mature release process SHOULD provide:
 
@@ -553,7 +571,7 @@ Build inputs use lockfiles.
 
 ---
 
-## 33. Independent review roadmap
+## 34. Independent review roadmap
 
 Before stable v1:
 
@@ -572,7 +590,7 @@ Findings must enter the gap register.
 
 ---
 
-## 34. P1/P0 policy
+## 35. P1/P0 policy
 
 Stable release cannot ship with unresolved P0/P1 gap unless:
 
@@ -584,7 +602,7 @@ P1 is not "we will fix after launch."
 
 ---
 
-## 35. Gate 09 required evidence
+## 36. Gate 09 required evidence
 
 ```text
 docs/evidence/gate-09-assurance.md
@@ -605,7 +623,7 @@ Must include:
 
 ---
 
-## 36. Gate 10 v1 checklist
+## 37. Gate 10 v1 checklist
 
 V1 requires:
 
@@ -622,7 +640,7 @@ V1 requires:
 
 ---
 
-## 37. Definition of stable v1
+## 38. Definition of stable v1
 
 A user can:
 
@@ -644,7 +662,7 @@ A user can:
 
 ---
 
-## 38. Exit criteria
+## 39. Exit criteria
 
 Gate 09 passes when security assurance is complete for a release candidate.
 
