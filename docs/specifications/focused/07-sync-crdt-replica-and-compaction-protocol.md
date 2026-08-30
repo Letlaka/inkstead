@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-05-crdt-sync  
 **Requires:** gate-04-local-journal PASS  
-**Related gaps:** GAP-001, GAP-002, GAP-006, GAP-008, GAP-013, GAP-014, GAP-015, GAP-017, GAP-018, GAP-030, GAP-034, GAP-035, GAP-036, GAP-044, GAP-045, GAP-047
+**Related gaps:** GAP-001, GAP-002, GAP-006, GAP-008, GAP-013, GAP-014, GAP-015, GAP-017, GAP-018, GAP-030, GAP-034, GAP-035, GAP-036, GAP-044, GAP-045, GAP-047, GAP-051, GAP-056, GAP-057
 
 ---
 
@@ -168,18 +168,24 @@ Metadata minimization should be revisited before implementation.
 
 ---
 
-## 11. Wrapped key distribution
+## 11. Key-generation compatibility
 
-Under the preferred crypto design, document/blob keys are derived from synchronized VDK
-generations.
+Under the preferred crypto design, Generation Keys and object keys are deterministically derived
+from VMK using versioned HKDF contexts.
 
-The sync protocol MUST provide VDK envelopes to authorized replicas before they are expected to
-decrypt content using that generation.
+The server therefore synchronizes only public crypto generation/version metadata, not random VDK
+secrets.
 
-If the crypto spec later chooses random per-object keys, sync MUST transport authenticated wrapped
-ObjectKeyEnvelopes first.
+Requirements:
 
-The server must never deliver ciphertext whose necessary key metadata has no recovery path.
+- a change identifies the generation/protocol needed to derive its key;
+- a client with VMK can derive every supported generation;
+- unsupported generations fail closed;
+- after an older server backup is restored, a current replica can republish current public crypto
+  metadata and VaultPassphraseEnvelope where required.
+
+If the crypto spec ultimately chooses random per-object keys, the sync protocol MUST instead
+transport authenticated wrapped ObjectKeyEnvelopes before ciphertext that depends on them.
 
 ---
 
@@ -270,7 +276,28 @@ Outer metadata may duplicate enough information for routing but is not trusted f
 
 ---
 
-## 17. V1 compaction safety decision
+## 17. Editor/CRDT compatibility dependency
+
+Gate 05 inherits the editor binding proven in Gate 04.
+
+Before sync is accepted, repeat the rich-text prototype across real independent replicas and the
+actual encrypted transport format.
+
+The test must cover:
+
+- concurrent text insert/delete;
+- overlapping formatting;
+- list/block edits;
+- undo/redo;
+- schema migration;
+- offline/reconnect.
+
+A beta binding is acceptable only if Inkstead owns compatibility fixtures and can pin a known-good
+version.
+
+---
+
+## 18. V1 compaction safety decision
 
 For v1:
 
@@ -289,7 +316,7 @@ This intentionally trades server storage for recoverability.
 
 ---
 
-## 18. Future destructive compaction
+## 19. Future destructive compaction
 
 Any future change-log pruning requires a separate ADR and protocol proving at least:
 
@@ -306,7 +333,7 @@ Do not implement deletion first and invent acknowledgement afterward.
 
 ---
 
-## 19. Snapshot selection
+## 20. Snapshot selection
 
 A new client may request a latest snapshot for each document and then pull later changes.
 
@@ -323,7 +350,7 @@ Because historical changes remain available in v1, a bad snapshot is recoverable
 
 ---
 
-## 20. Stale replica
+## 21. Stale replica
 
 A replica becomes stale after a configurable inactivity period or when protocol migrations require
 full rebootstrap.
@@ -336,7 +363,7 @@ Stale status does not delete local data.
 
 ---
 
-## 21. Stale-replica reconnect
+## 22. Stale-replica reconnect
 
 Before a stale replica may upload new changes:
 
@@ -352,7 +379,7 @@ or protocol changes.
 
 ---
 
-## 22. Permanent-purge marker
+## 23. Permanent-purge marker
 
 To prevent resurrection after a document is permanently deleted, server SHOULD retain an opaque
 purge marker:
@@ -373,7 +400,7 @@ Purge markers may remain until account deletion.
 
 ---
 
-## 23. Purged object on stale client
+## 24. Purged object on stale client
 
 If a stale client has local edits for a server-purged object:
 
@@ -387,7 +414,7 @@ No silent resurrection.
 
 ---
 
-## 24. Replica revocation
+## 25. Replica revocation
 
 Revoked replica:
 
@@ -399,7 +426,7 @@ Server rejects change uploads associated with revoked replica IDs.
 
 ---
 
-## 25. Server restore/rollback detection
+## 26. Server restore/rollback detection
 
 Existing clients remember:
 
@@ -415,7 +442,7 @@ Recovery flow should reconcile local changes with restored server state.
 
 ---
 
-## 26. Restore generation
+## 27. Restore generation
 
 Supported restore tooling SHOULD create/rotate a server restore-generation identifier after a
 deliberate backup restore.
@@ -430,7 +457,7 @@ threat model.
 
 ---
 
-## 27. Server withholding threat
+## 28. Server withholding threat
 
 AEAD detects modification but cannot force an untrusted server to return data it chooses to hide.
 
@@ -443,7 +470,7 @@ server transparency.
 
 ---
 
-## 28. API authorization
+## 29. API authorization
 
 Every sync query is scoped to authenticated owner.
 
@@ -459,7 +486,7 @@ Never trust opaque UUID secrecy as authorization.
 
 ---
 
-## 29. API abuse limits
+## 30. API abuse limits
 
 Server MUST bound:
 
@@ -475,7 +502,7 @@ sync limits with hard size ceilings rather than login-style tiny limits.
 
 ---
 
-## 30. Sync protocol versioning
+## 31. Sync protocol versioning
 
 API/sync protocol version is explicit and independent of crypto version.
 
@@ -486,7 +513,7 @@ mutation.
 
 ---
 
-## 31. Sync status semantics
+## 32. Sync status semantics
 
 Client tracks separately:
 
@@ -502,7 +529,7 @@ It does not mean every other replica is current.
 
 ---
 
-## 32. No WebSocket requirement
+## 33. No WebSocket requirement
 
 V1 uses ordinary HTTPS request/response sync.
 
@@ -512,7 +539,7 @@ Foreground polling/reachability triggers are enough.
 
 ---
 
-## 33. Gate 05 tests
+## 34. Gate 05 tests
 
 Minimum:
 
@@ -535,11 +562,15 @@ Minimum:
 17. purged object cannot resurrect;
 18. server-sequence regression triggers restore mode;
 19. unsupported protocol fails closed;
-20. large/abusive batches rejected.
+20. large/abusive batches rejected;
+21. rich-text editor binding converges through real encrypted sync;
+22. append-only change-log growth is benchmarked against realistic journaling workloads;
+23. restore of an older server backup can be repaired using a current replica or Recovery Kit without
+    inventing missing keys.
 
 ---
 
-## 34. Gate 05 evidence
+## 35. Gate 05 evidence
 
 ```text
 docs/evidence/gate-05-crdt-sync.md
@@ -558,7 +589,7 @@ Include:
 
 ---
 
-## 35. Blocking decisions before approval
+## 36. Blocking decisions before approval
 
 - exact global/per-vault server sequence implementation;
 - stale-replica threshold;
@@ -567,11 +598,13 @@ Include:
 - purge-marker retention;
 - whether journal metadata uses same change stream or separate objects;
 - maximum batch sizes;
-- server restore-generation mechanism.
+- server restore-generation mechanism;
+- acceptable v1 append-only change-log growth/storage ceiling;
+- exact editor/Automerge binding version and compatibility fixture policy.
 
 ---
 
-## 36. Exit criteria
+## 37. Exit criteria
 
 Gate 05 passes only when:
 
@@ -582,4 +615,7 @@ Gate 05 passes only when:
 - stale replicas cannot resurrect purged objects;
 - rollback/restore is detected for existing clients;
 - authorization tests pass;
+- editor/CRDT integration is proven through the actual sync transport;
+- append-only history growth is measured and operationally acceptable for v1;
+- restored-server key metadata can be repaired through defined recovery paths;
 - no unresolved P1 sync/CRDT gap remains.
