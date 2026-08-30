@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-01-security-auth  
 **Requires:** gate-00-foundation PASS  
-**Related gaps:** GAP-003, GAP-010, GAP-018, GAP-019, GAP-021, GAP-022, GAP-023, GAP-026, GAP-027, GAP-028, GAP-034, GAP-039, GAP-042, GAP-049, GAP-052, GAP-053, GAP-055, GAP-058
+**Related gaps:** GAP-003, GAP-010, GAP-018, GAP-019, GAP-021, GAP-022, GAP-023, GAP-026, GAP-027, GAP-028, GAP-034, GAP-039, GAP-042, GAP-049, GAP-052, GAP-053, GAP-055, GAP-058, GAP-060
 
 ---
 
@@ -296,7 +296,16 @@ Journal APIs use:
 Generated TokenAuthentication SHOULD be removed from Inkstead journal API settings unless an ADR
 introduces a real external-client requirement.
 
-If retained for some non-journal endpoint, the scope must be explicit.
+Cookiecutter also generated:
+
+- `rest_framework.authtoken` in INSTALLED_APPS;
+- the `/api/auth-token/` token-issuance endpoint.
+
+If Inkstead has no approved token client, Gate 01 MUST remove/disable the unused token endpoint and
+token app rather than leaving a credential-issuance path that the PWA does not need.
+
+If token authentication is retained for any non-journal client, its scope, storage, rotation,
+revocation and CSRF-independent threat model require a separate ADR.
 
 ---
 
@@ -561,7 +570,9 @@ At minimum:
 19. MFA can be enabled under the chosen closed-registration/email-verification policy;
 20. stopping Redis does not silently disable authentication rate limiting;
 21. cached PWA shell contains no account, vault, or CSRF-specific state;
-22. CSP style restrictions remain compatible with the selected editor stack.
+22. CSP style restrictions remain compatible with the selected editor stack;
+23. /api/auth-token/ does not issue persistent API credentials in the default session-only build;
+24. rest_framework.authtoken is absent/disabled unless justified by an ADR.
 
 ---
 
