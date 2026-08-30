@@ -69,6 +69,15 @@
 | GAP-048 | P2 | PWA/browser feature detection and minimum support matrix are not specified. | 05 + 11 |
 | GAP-049 | P2 | Local CA/certificate rotation and WebAuthn relying-party stability need an operational migration plan. | 03 + 10 |
 | GAP-050 | P2 | The server needs least-privilege database/storage credentials and a secret-management policy compatible with self-hosted Docker. | 10 |
+| GAP-051 | P1 | Tiptap + Automerge rich-text integration is assumed but not proven. The official @automerge/prosemirror binding is currently beta and requires a constrained ProseMirror schema, so the chosen editor/extensions need a prototype convergence test before implementation is locked. | 06 + 07 |
+| GAP-052 | P1 | django-allauth rate limits depend on Django cache availability, while generated Cookiecutter production cache uses django-redis IGNORE_EXCEPTIONS=True. A Redis outage could silently weaken authentication throttling unless failure behavior is changed and tested. | 03 |
+| GAP-053 | P1 | Disabling mandatory email verification for offline-friendly accounts conflicts with allauth MFA's default refusal to enable MFA for unverified email addresses. Closed-registration provisioning and MFA_ALLOW_UNVERIFIED_EMAIL/verified-address policy must be explicit. | 03 |
+| GAP-054 | P1 | A recovery secret that only unwraps a RecoveryEnvelope is not a total-loss recovery mechanism if the server, backups, and every local copy of that envelope are lost. Inkstead needs self-contained portable recovery material/Recovery Kit. | 01A + 05 + 10 |
+| GAP-055 | P1 | The cached PWA shell must be account-neutral and contain no user-specific state or CSRF token; otherwise cached shell state can cross sessions or go stale. Session/CSRF bootstrap must be network-only and outside static shell persistence. | 03 + 04 |
+| GAP-056 | P1 | Restoring an older server backup can lose newer vault/recovery/key-generation envelopes even when an existing client still has newer ciphertext/keys. Restore reconciliation must define how current key metadata is republished, and what happens when no current replica survives. | 05 + 07 + 10 |
+| GAP-057 | P2 | Deferring destructive CRDT compaction makes the v1 server change log append-only and potentially unbounded. Storage growth must be benchmarked and bounded operationally before v1. | 07 + 10 + 11 |
+| GAP-058 | P2 | Strict CSP style directives may conflict with editor/ProseMirror/Tiptap runtime styling. The final CSP must test both script/WASM and style behavior without casually enabling unsafe-inline. | 03 + 06 |
+| GAP-059 | P2 | npm lifecycle/install scripts add supply-chain execution risk during builds. The reproducible frontend build policy must document when lifecycle scripts are allowed and how dependency changes are reviewed. | 02 + 11 |
 
 ---
 
