@@ -15,6 +15,7 @@ gates:
     evidence: docs/evidence/gate-00-foundation.md
     required_checks:
       - product_flow_spec_approved
+      - security_threat_model_spec_approved
       - cookiecutter_baseline_recorded
       - django_system_check
       - backend_tests
@@ -71,8 +72,8 @@ gates:
       - versioned_crypto_envelopes
       - vault_master_key_random
       - recovery_secret_flow
-      - wrapped_document_keys
-      - wrapped_blob_keys
+      - portable_total_loss_recovery
+      - object_key_derivation_or_envelope_distribution
       - crypto_worker
       - plaintext_indexeddb_canary
       - corruption_detection
@@ -106,7 +107,8 @@ gates:
       - duplicate_idempotency
       - interrupted_sync_recovery
       - multi_replica_convergence
-      - wrapped_object_key_sync
+      - editor_crdt_binding_compatibility
+      - key_generation_recovery_path
       - stale_replica_policy
       - safe_snapshot_retention
       - rollback_restore_detection
