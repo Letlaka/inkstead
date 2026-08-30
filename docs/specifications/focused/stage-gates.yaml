@@ -14,6 +14,7 @@ gates:
     requires: []
     evidence: docs/evidence/gate-00-foundation.md
     required_checks:
+      - product_flow_spec_approved
       - cookiecutter_baseline_recorded
       - django_system_check
       - backend_tests
@@ -45,7 +46,7 @@ gates:
       - account_switch_vault_lock
 
   gate-02-pwa-offline:
-    spec: docs/specifications/focused/05-pwa-local-storage-offline-and-update-lifecycle.md
+    spec: docs/specifications/focused/04-pwa-local-storage-offline-and-update-lifecycle.md
     requires:
       - gate-01-security-auth
     evidence: docs/evidence/gate-02-pwa-offline.md
@@ -62,7 +63,7 @@ gates:
       - service_worker_kill_switch
 
   gate-03-crypto-vault:
-    spec: docs/specifications/focused/04-cryptography-key-management-and-recovery.md
+    spec: docs/specifications/focused/05-cryptography-key-management-and-recovery.md
     requires:
       - gate-02-pwa-offline
     evidence: docs/evidence/gate-03-crypto-vault.md
