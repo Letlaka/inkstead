@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-02-pwa-offline  
 **Requires:** gate-01-security-auth PASS  
-**Related gaps:** GAP-005, GAP-006, GAP-007, GAP-008, GAP-013, GAP-017, GAP-019, GAP-020, GAP-021, GAP-031, GAP-032, GAP-037, GAP-041, GAP-048
+**Related gaps:** GAP-005, GAP-006, GAP-007, GAP-008, GAP-013, GAP-017, GAP-019, GAP-020, GAP-021, GAP-031, GAP-032, GAP-037, GAP-041, GAP-048, GAP-055
 
 ---
 
@@ -52,6 +52,17 @@ Cache only safe application resources:
 - local fonts;
 - manifest;
 - static images required by UI.
+
+The cached journal shell MUST be account-neutral. It MUST NOT contain:
+
+- username/email;
+- vault UUID;
+- entry/journal metadata;
+- CSRF token;
+- session-specific bootstrap JSON.
+
+Online session/account/CSRF state is fetched separately through network-only endpoints outside the
+static shell cache.
 
 Do not CacheStorage-cache:
 
@@ -494,7 +505,9 @@ Minimum:
 14. Service Worker incompatible update refusal;
 15. Service Worker kill switch preserving IndexedDB;
 16. older app refuses newer DB schema;
-17. browser feature-detection screen.
+17. browser feature-detection screen;
+18. cached shell inspected before and after account switch contains no user-specific state;
+19. CSRF/session bootstrap requests are network-only and absent from CacheStorage.
 
 ---
 
@@ -525,7 +538,8 @@ Must include:
 - Web Locks fallback;
 - update activation UX;
 - persistent-storage warning UX;
-- cache version/kill-switch route design.
+- cache version/kill-switch route design;
+- exact user-neutral shell and session-bootstrap boundary.
 
 ---
 
