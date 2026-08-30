@@ -66,7 +66,7 @@
 | GAP-045 | P2 | Server restore from backup may roll server sequence backward relative to clients. Clients need restore/rollback detection and recovery behavior. | 07 + 10 |
 | GAP-046 | P2 | Local-search index lifecycle on lock, migration, corruption, and crypto-key rotation needs explicit behavior. | 09 |
 | GAP-047 | P2 | Sync status needs to distinguish "saved locally", "queued", "server acknowledged", and "seen by another replica" without falsely implying backup durability. | 01 + 07 |
-| GAP-048 | P2 | PWA/browser feature detection and minimum support matrix are not specified. | 05 + 11 |
+| GAP-048 | P2 | PWA/browser feature detection and minimum support matrix are not specified. | 04 + 11 |
 | GAP-049 | P2 | Local CA/certificate rotation and WebAuthn relying-party stability need an operational migration plan. | 03 + 10 |
 | GAP-050 | P2 | The server needs least-privilege database/storage credentials and a secret-management policy compatible with self-hosted Docker. | 10 |
 | GAP-051 | P1 | Tiptap + Automerge rich-text integration is assumed but not proven. The official @automerge/prosemirror binding is currently beta and requires a constrained ProseMirror schema, so the chosen editor/extensions need a prototype convergence test before implementation is locked. | 06 + 07 |
@@ -78,6 +78,8 @@
 | GAP-057 | P2 | Deferring destructive CRDT compaction makes the v1 server change log append-only and potentially unbounded. Storage growth must be benchmarked and bounded operationally before v1. | 07 + 10 + 11 |
 | GAP-058 | P2 | Strict CSP style directives may conflict with editor/ProseMirror/Tiptap runtime styling. The final CSP must test both script/WASM and style behavior without casually enabling unsafe-inline. | 03 + 06 |
 | GAP-059 | P2 | npm lifecycle/install scripts add supply-chain execution risk during builds. The reproducible frontend build policy must document when lifecycle scripts are allowed and how dependency changes are reviewed. | 02 + 11 |
+| GAP-060 | P1 | Cookiecutter generates rest_framework.authtoken and /api/auth-token/ in addition to TokenAuthentication. Session-only PWA policy requires removing/disabling the unused token app/endpoint as well, not merely changing DEFAULT_AUTHENTICATION_CLASSES. | 03 |
+| GAP-061 | P2 | Cookiecutter enables PostgreSQL ATOMIC_REQUESTS globally. Long blob transfer/health/read-only endpoints need explicit transaction-boundary review so they do not hold unnecessary DB transactions or create avoidable DoS/locking behavior. | 08 + 10 |
 
 ---
 
