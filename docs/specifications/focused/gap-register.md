@@ -19,27 +19,27 @@
 
 | ID | Sev | Gap | Focused specification / resolution target |
 | --- | --- | --- | --- |
-| GAP-001 | P1 | Random per-entry/per-blob keys are not yet defined as wrapped, synchronized objects, so a second replica could receive ciphertext without the key needed to decrypt it. | 04 + 07 |
+| GAP-001 | P1 | Random per-entry/per-blob keys are not yet defined as wrapped, synchronized objects, so a second replica could receive ciphertext without the key needed to decrypt it. | 05 + 07 |
 | GAP-002 | P1 | Snapshot compaction cannot trust a client-supplied "through sequence" marker because the zero-knowledge server cannot inspect whether the snapshot actually contains those changes. | 07 |
-| GAP-003 | P1 | Proposed CSP `script-src 'self'` blocks WebAssembly compilation used by likely Automerge/libsodium builds. | 03 + 05 |
+| GAP-003 | P1 | Proposed CSP `script-src 'self'` blocks WebAssembly compilation used by likely Automerge/libsodium builds. | 03 + 04 |
 | GAP-004 | P2 | ASVS matrix path is inconsistently cased in the master spec. Linux treats the variants as distinct files. | 11 |
-| GAP-005 | P1 | IndexedDB is best-effort storage by default and can be evicted. The offline contract needs persistent-storage request/status/quota behavior. | 05 |
-| GAP-006 | P1 | Multiple same-origin tabs can race synchronization, replica sequence allocation, migrations, and vault state. | 05 + 07 |
-| GAP-007 | P1 | Service Worker update behavior, version skew, cache migration, and emergency unregister/kill-switch are not specified. | 05 |
-| GAP-008 | P1 | App version, API version, Dexie schema, CRDT schema, and crypto protocol need an explicit compatibility matrix and upgrade ordering. | 05 + 07 + 11 |
-| GAP-009 | P1 | New-replica bootstrap is incomplete: authenticated new browsers need a defined path to obtain/unwrap the Vault Master Key. | 04 |
-| GAP-010 | P1 | Replica/session revocation cannot erase keys or plaintext already copied to a lost device. Compromise/rekey semantics need to be explicit. | 03 + 04 + 07 |
-| GAP-011 | P2 | JavaScript cannot guarantee cryptographic key zeroization because of garbage collection. The security claim must be best-effort, using worker termination and reference minimization. | 04 |
-| GAP-012 | P2 | Metadata leakage profile is not documented: object counts, ciphertext sizes, timestamps, access patterns, account data, and sync timing remain server-visible. | 03 + 04 + 09 |
+| GAP-005 | P1 | IndexedDB is best-effort storage by default and can be evicted. The offline contract needs persistent-storage request/status/quota behavior. | 04 |
+| GAP-006 | P1 | Multiple same-origin tabs can race synchronization, replica sequence allocation, migrations, and vault state. | 04 + 07 |
+| GAP-007 | P1 | Service Worker update behavior, version skew, cache migration, and emergency unregister/kill-switch are not specified. | 04 |
+| GAP-008 | P1 | App version, API version, Dexie schema, CRDT schema, and crypto protocol need an explicit compatibility matrix and upgrade ordering. | 04 + 07 + 11 |
+| GAP-009 | P1 | New-replica bootstrap is incomplete: authenticated new browsers need a defined path to obtain/unwrap the Vault Master Key. | 05 |
+| GAP-010 | P1 | Replica/session revocation cannot erase keys or plaintext already copied to a lost device. Compromise/rekey semantics need to be explicit. | 03 + 05 + 07 |
+| GAP-011 | P2 | JavaScript cannot guarantee cryptographic key zeroization because of garbage collection. The security claim must be best-effort, using worker termination and reference minimization. | 05 |
+| GAP-012 | P2 | Metadata leakage profile is not documented: object counts, ciphertext sizes, timestamps, access patterns, account data, and sync timing remain server-visible. | 03 + 05 + 09 |
 | GAP-013 | P1 | Local IndexedDB contents are untrusted and can be modified/corrupted. AEAD verification, corruption quarantine, and resync/recovery flows need specification. | 04 + 05 + 07 |
 | GAP-014 | P2 | Server rollback/withholding is only partly detectable. Existing replicas can compare known cursors/heads; a completely new replica lacks prior state. | 07 + threat model |
 | GAP-015 | P1 | Long-offline/stale replicas can resurrect deleted data unless tombstone retention, replica expiry, and full-resync rules are defined. | 07 + 09 |
 | GAP-016 | P1 | E2EE attachments prevent normal server-side malware/type inspection. Attachment policy must reconcile privacy with file-security requirements. | 08 |
-| GAP-017 | P1 | Local save needs crash-consistent transactional outbox semantics so encrypted local persistence and pending sync cannot diverge. | 05 + 07 |
+| GAP-017 | P1 | Local save needs crash-consistent transactional outbox semantics so encrypted local persistence and pending sync cannot diverge. | 04 + 07 |
 | GAP-018 | P1 | A long-offline same-origin PWA needs a defined CSRF/session refresh path when the Django session expires. | 03 + 07 |
-| GAP-019 | P1 | Multiple user accounts using the same browser origin need local vault namespace isolation and mandatory vault lock on account switching. | 03 + 05 |
-| GAP-020 | P1 | Browser/site-data clearing and quota exhaustion can destroy unsynced local-only data. The UI needs persistence status, storage pressure handling, and clear sync/backup state. | 05 |
-| GAP-021 | P2 | Background/task-switcher screenshots can expose visible plaintext even if the vault key remains within its grace period. | 03 + 05 |
+| GAP-019 | P1 | Multiple user accounts using the same browser origin need local vault namespace isolation and mandatory vault lock on account switching. | 03 + 04 |
+| GAP-020 | P1 | Browser/site-data clearing and quota exhaustion can destroy unsynced local-only data. The UI needs persistence status, storage pressure handling, and clear sync/backup state. | 04 |
+| GAP-021 | P2 | Background/task-switcher screenshots can expose visible plaintext even if the vault key remains within its grace period. | 03 + 04 |
 | GAP-022 | P2 | Browser history, document titles, referrers, URLs, notifications, and error reports can leak entry/journal metadata unless explicitly constrained. | 03 + 06 |
 | GAP-023 | P2 | Browser extensions, OS malware, input methods, screen capture, and a compromised browser remain outside the app's protection boundary. | 03 + threat model |
 | GAP-024 | P1 | Frontend build reproducibility is incomplete: generated Docker currently uses npm install and the initial repository has no committed package-lock. | 02 + 11 |
@@ -49,17 +49,17 @@
 | GAP-028 | P1 | allauth IP rate limiting depends on correctly configured trusted proxy count/header behind Traefik. | 03 + 10 |
 | GAP-029 | P1 | Account/journal deletion must cascade on the server, while documentation must state that previously synchronized local copies cannot be remotely erased. | 09 |
 | GAP-030 | P2 | Journal date semantics versus security/sync timestamps are underspecified. Client clocks are untrusted for security ordering. | 06 + 07 |
-| GAP-031 | P2 | "Sync on the same network" should be implemented as reachability of the configured private origin, not fragile LAN-detection logic. | 05 + 10 |
-| GAP-032 | P1 | Service Worker/app-shell upgrades can race IndexedDB/crypto migrations and leave incompatible code controlling open tabs. | 05 |
+| GAP-031 | P2 | "Sync on the same network" should be implemented as reachability of the configured private origin, not fragile LAN-detection logic. | 04 + 10 |
+| GAP-032 | P1 | Service Worker/app-shell upgrades can race IndexedDB/crypto migrations and leave incompatible code controlling open tabs. | 04 |
 | GAP-033 | P2 | Failed/abandoned attachment uploads can create orphan encrypted blobs; garbage collection needs safe ownership/reference rules. | 08 + 09 |
 | GAP-034 | P1 | Every API object query needs explicit owner/journal authorization and IDOR tests. | 03 + 07 + 08 |
 | GAP-035 | P1 | Sync and blob APIs need pagination, request/body limits, rate limits, and abuse/DoS boundaries. | 07 + 08 + 10 |
-| GAP-036 | P2 | Dependency upgrades can change binary/serialization behavior. Compatibility fixtures must protect crypto and CRDT formats. | 04 + 07 + 11 |
+| GAP-036 | P2 | Dependency upgrades can change binary/serialization behavior. Compatibility fixtures must protect crypto and CRDT formats. | 05 + 07 + 11 |
 | GAP-037 | P1 | First-run vault state machine is incomplete: no vault, local vault, server vault but no local key, locked, recovery-required, incompatible version. | 04 + 05 |
-| GAP-038 | P1 | Recovery secret format, entropy, checksum, regeneration, print/save UX, and verification are not yet specified. | 04 |
+| GAP-038 | P1 | Recovery secret format, entropy, checksum, regeneration, print/save UX, and verification are not yet specified. | 05 |
 | GAP-039 | P1 | Cookiecutter currently enables DRF TokenAuthentication; the web PWA design intends session authentication only unless a future external client is approved. | 03 + 07 |
 | GAP-040 | P2 | Frontend unit/type/lint test stack is not yet selected or wired into pre-merge verification. | 02 + 11 |
-| GAP-041 | P2 | Privacy screen behavior on `visibilitychange`, `pagehide`, back-forward cache, and app switching needs definition. | 05 |
+| GAP-041 | P2 | Privacy screen behavior on `visibilitychange`, `pagehide`, back-forward cache, and app switching needs definition. | 04 |
 | GAP-042 | P2 | Journal/entry text must never appear in `document.title`, URL/query strings, notification previews, or telemetry/error payloads. | 03 + 06 |
 | GAP-043 | P2 | Client attachment image handling should consider local decode/re-encode and EXIF stripping to reduce metadata and malicious payload risk. | 08 |
 | GAP-044 | P1 | A stale replica needs a deterministic rule for when incremental sync is refused and a trusted full resynchronization is required. | 07 |
