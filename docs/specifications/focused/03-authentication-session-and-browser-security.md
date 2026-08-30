@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-01-security-auth  
 **Requires:** gate-00-foundation PASS  
-**Related gaps:** GAP-003, GAP-010, GAP-018, GAP-019, GAP-021, GAP-022, GAP-023, GAP-026, GAP-027, GAP-028, GAP-034, GAP-039, GAP-042, GAP-049
+**Related gaps:** GAP-003, GAP-010, GAP-018, GAP-019, GAP-021, GAP-022, GAP-023, GAP-026, GAP-027, GAP-028, GAP-034, GAP-039, GAP-042, GAP-049, GAP-052, GAP-053, GAP-055, GAP-058
 
 ---
 
@@ -80,6 +80,23 @@ the vault encryption model.
 
 The current generated Brevo coupling must be reviewed. A provider-neutral default is preferred for
 the final Inkstead distribution.
+
+### 5.1 MFA with unverified/offline-friendly accounts
+
+allauth does not normally allow an account with an unverified email address to enable MFA. That is
+a sensible public-signup defense, but Inkstead's default deployment disables public registration
+and may intentionally avoid mandatory email verification.
+
+Before Gate 01 approval choose and test one explicit policy:
+
+1. administrator-provisioned accounts receive a verified allauth EmailAddress record when email is
+   configured; or
+2. Inkstead enables `MFA_ALLOW_UNVERIFIED_EMAIL=True` only for the closed-registration deployment
+   after documenting why the account-squatting threat does not apply; or
+3. require verified email and therefore require a configured local/remote SMTP system.
+
+The application MUST NOT accidentally disable MFA merely because email verification was removed for
+offline operation.
 
 ---
 
@@ -182,6 +199,25 @@ Gate 01 must prove the chosen allauth trusted-proxy configuration using integrat
 - one legitimate Traefik hop;
 - repeated failed login attempts.
 
+### 10.1 Rate-limit cache failure policy
+
+allauth's built-in rate limiter is backed by Django's cache. The generated Cookiecutter production
+cache currently uses django-redis with `IGNORE_EXCEPTIONS=True`.
+
+That is not an acceptable unexamined security dependency: if Redis becomes unavailable, Inkstead
+must know whether authentication throttling fails open, fails closed, or raises an application
+error.
+
+Preferred security posture to evaluate:
+
+- production authentication MUST NOT silently lose rate limiting;
+- it is acceptable for online server authentication to fail safely during a Redis outage because
+  an already initialized local journal remains usable offline;
+- the final settings must be tested by stopping Redis during repeated failed logins.
+
+A dedicated security cache would be preferable if allauth cleanly supports one; otherwise the
+default cache failure policy must be made explicit.
+
 ---
 
 ## 11. User sessions
@@ -235,7 +271,10 @@ The PWA uses same-origin session authentication.
 CSRF protection remains enabled.
 
 Because Cookiecutter sets the CSRF cookie HttpOnly, JavaScript SHOULD obtain a masked CSRF token
-through a server-rendered bootstrap element or dedicated same-origin endpoint when online.
+from a dedicated same-origin, network-only session/CSRF bootstrap endpoint when online.
+
+The cached `/journal/` application shell MUST NOT embed a user-specific CSRF token, account name,
+vault identifier, or other session-specific state.
 
 Requirements:
 
@@ -345,6 +384,10 @@ while keeping ordinary `unsafe-eval` prohibited.
 Only if compatibility, performance, and security are demonstrated across target browsers.
 
 The decision MUST be tested in Chromium, Firefox, and WebKit before approval.
+
+The same browser test must validate restrictive style directives against Bootstrap and the selected
+ProseMirror/Tiptap integration. Inkstead MUST NOT add broad `style-src 'unsafe-inline'` merely to
+silence editor rendering failures without a documented reason and narrower alternatives review.
 
 ---
 
@@ -514,7 +557,11 @@ At minimum:
 15. security headers present;
 16. CSP permits required WASM but not ordinary eval;
 17. external script injection blocked;
-18. cross-user object authorization test fails safely.
+18. cross-user object authorization test fails safely;
+19. MFA can be enabled under the chosen closed-registration/email-verification policy;
+20. stopping Redis does not silently disable authentication rate limiting;
+21. cached PWA shell contains no account, vault, or CSRF-specific state;
+22. CSP style restrictions remain compatible with the selected editor stack.
 
 ---
 
@@ -549,7 +596,10 @@ Must include:
 - CSP WASM strategy;
 - Trusted Types enforcement strategy;
 - exact CSRF refresh/bootstrap design;
-- whether USERSESSIONS_TRACK_ACTIVITY is enabled.
+- whether USERSESSIONS_TRACK_ACTIVITY is enabled;
+- MFA policy for unverified/admin-provisioned accounts;
+- rate-limit behavior when Redis/cache is unavailable;
+- network-only CSRF/session bootstrap endpoint contract.
 
 ---
 
@@ -564,4 +614,7 @@ Gate 01 may pass only when:
 - CSP/security headers are enforced and compatible with required runtime;
 - CSRF/session recovery behavior is proven;
 - cross-account and cross-object access tests pass;
+- Redis/cache failure cannot silently remove authentication throttling;
+- the PWA shell is proven account-neutral;
+- MFA works under the chosen no-mandatory-email deployment policy;
 - no unresolved P1 authentication/browser-security gap remains.
