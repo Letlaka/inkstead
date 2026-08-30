@@ -4,7 +4,7 @@
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-08-operations  
 **Requires:** gate-07-data-lifecycle PASS  
-**Related gaps:** GAP-025, GAP-028, GAP-031, GAP-045, GAP-049, GAP-050
+**Related gaps:** GAP-025, GAP-028, GAP-031, GAP-045, GAP-049, GAP-050, GAP-054, GAP-056, GAP-057
 
 ---
 
@@ -298,7 +298,25 @@ Detailed diagnostics are admin-only or local.
 
 ---
 
-## 18. Backup layers
+## 18. Recovery Kit operational requirement
+
+The Emergency Recovery Kit is user cryptographic recovery material, not merely another server
+backup file.
+
+Operations documentation MUST tell the administrator/user to keep valid portable recovery material
+outside the Inkstead server.
+
+A server backup and Recovery Kit solve different failures:
+
+- server backup restores service/account/ciphertext state;
+- Recovery Kit restores vault root-key access when server key envelopes are missing.
+
+A stable release must test a scenario where the server key envelope is unavailable but the Recovery
+Kit restores vault access.
+
+---
+
+## 19. Backup layers
 
 Back up:
 
@@ -313,7 +331,7 @@ Journal plaintext is not needed for server backup.
 
 ---
 
-## 19. Reuse Cookiecutter PostgreSQL tooling
+## 20. Reuse Cookiecutter PostgreSQL tooling
 
 Use the generated PostgreSQL backup/restore tooling as the foundation.
 
@@ -323,7 +341,7 @@ Add orchestration around it only where Inkstead needs whole-system consistency.
 
 ---
 
-## 20. Backup archive encryption
+## 21. Backup archive encryption
 
 Even though journal records are client-encrypted, server backups contain:
 
@@ -338,7 +356,7 @@ Therefore backup repositories/archives themselves MUST be access-controlled and 
 
 ---
 
-## 21. Backup-tool candidate
+## 22. Backup-tool candidate
 
 `restic` is a strong candidate for whole-system encrypted backup orchestration because it is open
 source, encrypts backup repositories, supports local and remote targets, supports integrity
@@ -350,7 +368,7 @@ Inkstead MUST NOT implement its own backup encryption format.
 
 ---
 
-## 22. Backup consistency
+## 23. Backup consistency
 
 PostgreSQL and blob backup must not produce a state where the database references a blob that the
 backup can never restore.
@@ -375,7 +393,7 @@ Choose the least disruptive design that passes destructive restore testing.
 
 ---
 
-## 23. Backup schedule
+## 24. Backup schedule
 
 Default recommendation to refine:
 
@@ -389,7 +407,7 @@ Inkstead should expose backup health, not force one storage target.
 
 ---
 
-## 24. Backup destination
+## 25. Backup destination
 
 Supported philosophy:
 
@@ -403,7 +421,7 @@ No mandatory vendor cloud.
 
 ---
 
-## 25. Backup key/password
+## 26. Backup key/password
 
 Backup encryption credentials must not live only inside the backup being protected.
 
@@ -413,7 +431,7 @@ A backup with an irretrievably lost repository password is not a recovery strate
 
 ---
 
-## 26. Restore procedure
+## 27. Restore procedure
 
 A supported restore must rebuild:
 
@@ -428,11 +446,17 @@ After restore:
 - server starts;
 - health passes;
 - existing client detects restore generation/sequence state;
-- clients reconcile without silent data loss.
+- clients reconcile without silent data loss;
+- a current client may republish newer VaultPassphraseEnvelope/public crypto metadata missing from
+  the backup;
+- if no current client survives, the Emergency Recovery Kit must provide the independent recovery
+  route.
+
+The procedure must explicitly test a backup taken before a later vault-passphrase-envelope update.
 
 ---
 
-## 27. Restore generation
+## 28. Restore generation
 
 Supported restore tooling SHOULD mark a new server restore generation.
 
@@ -444,7 +468,7 @@ must enter reconciliation even if restore generation was not updated.
 
 ---
 
-## 28. Destructive restore test
+## 29. Destructive restore test
 
 Gate 08 requires an actual destructive test:
 
@@ -463,7 +487,7 @@ A successful backup command alone does not pass.
 
 ---
 
-## 29. Backup plaintext canary
+## 30. Backup plaintext canary
 
 The journal plaintext canary must be searched in:
 
@@ -475,7 +499,7 @@ It must not appear.
 
 ---
 
-## 30. Updates
+## 31. Updates
 
 Server update workflow:
 
@@ -490,7 +514,7 @@ Do not roll application code backward across irreversible DB/crypto migrations.
 
 ---
 
-## 31. Security updates
+## 32. Security updates
 
 Critical security patches may bypass normal cadence but not verification.
 
@@ -503,7 +527,7 @@ Emergency process still runs:
 
 ---
 
-## 32. Resource limits / DoS
+## 33. Resource limits / DoS
 
 Production SHOULD set practical:
 
@@ -517,7 +541,7 @@ Self-hosted/private does not mean accidental infinite resource use is harmless.
 
 ---
 
-## 33. Admin exposure
+## 34. Admin exposure
 
 Admin endpoint:
 
@@ -532,7 +556,7 @@ Do not rely on a hidden/random URL as the security control.
 
 ---
 
-## 34. Gate 08 tests
+## 35. Gate 08 tests
 
 Minimum:
 
@@ -550,11 +574,14 @@ Minimum:
 12. destructive restore succeeds;
 13. existing client detects older restore state;
 14. new client can recover vault from restored server;
-15. plaintext canary absent from backup.
+15. plaintext canary absent from backup;
+16. total-loss Recovery Kit path succeeds with server key envelope removed;
+17. older-backup key metadata is repaired from current replica/Recovery Kit;
+18. append-only sync history storage use is included in capacity/backup measurements.
 
 ---
 
-## 35. Gate 08 evidence
+## 36. Gate 08 evidence
 
 ```text
 docs/evidence/gate-08-operations.md
@@ -573,7 +600,7 @@ Include:
 
 ---
 
-## 36. Blocking decisions before approval
+## 37. Blocking decisions before approval
 
 - private CA solution;
 - backup repository tool;
@@ -587,7 +614,7 @@ Include:
 
 ---
 
-## 37. Exit criteria
+## 38. Exit criteria
 
 Gate 08 passes only when:
 
