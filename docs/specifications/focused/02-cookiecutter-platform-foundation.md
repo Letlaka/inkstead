@@ -3,7 +3,7 @@
 **Status:** DRAFT  
 **Parent:** `../master-product-and-implementation-spec.md`  
 **Gate:** gate-00-foundation  
-**Related gaps:** GAP-024, GAP-039, GAP-040  
+**Related gaps:** GAP-024, GAP-039, GAP-040, GAP-059  
 **Prerequisites:** Focused Specification 01 reviewed sufficiently to confirm product assumptions.
 
 ---
@@ -111,7 +111,13 @@ Before adding React or other frontend packages:
 2. establish deterministic installation using `npm ci`;
 3. update the production Docker client-builder to copy the lockfile and use `npm ci`;
 4. verify the resulting bundle is reproducible enough for CI/build review;
-5. preserve an explicit supported Node version.
+5. preserve an explicit supported Node version;
+6. document npm lifecycle-script policy.
+
+`npm ci` may execute dependency lifecycle scripts. Inkstead must review new/changed dependencies
+that introduce install/postinstall execution and SHOULD use `--ignore-scripts` where the locked
+dependency graph permits it. Required lifecycle scripts must be explicitly understood rather than
+implicitly trusted.
 
 The generated `npm install` behavior is acceptable as upstream baseline but SHOULD NOT remain the
 production build strategy once Inkstead adds security-sensitive frontend dependencies.
@@ -306,7 +312,8 @@ Gate 00 SHOULD establish:
 - frontend lockfile integrity;
 - no committed secrets;
 - dependency license review baseline;
-- ability to produce an SBOM later.
+- ability to produce an SBOM later;
+- frontend dependency lifecycle-script inventory.
 
 Digest-pinning container base images may be introduced in operations hardening rather than blocking
 the first foundation gate, but image tags MUST be explicit.
@@ -334,7 +341,8 @@ It establishes a trustworthy platform only.
 - exact Node lockfile/install workflow;
 - how to record the unknown/known Cookiecutter source SHA;
 - whether generated GitHub Actions remain enabled, are supplemented by self-hosted CI, or both;
-- whether Brevo remains temporarily until Gate 01.
+- whether Brevo remains temporarily until Gate 01;
+- npm lifecycle-script policy and whether production `npm ci --ignore-scripts` is feasible.
 
 ---
 
