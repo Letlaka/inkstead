@@ -176,6 +176,7 @@ Architecture-changing implementation MUST include an ADR when required.
 | --- | --- | --- |
 | 00 | Framework and gap register | Gate 00 |
 | 01 | Product scope and end-to-end user flows | Gate 00 dependency |
+| 01A | Security/privacy threat model and data classification | Gate 00 dependency |
 | 02 | Cookiecutter platform foundation | Gate 00 |
 | 03 | Authentication, sessions and browser security | Gate 01 |
 | 04 | PWA, local storage, offline and update lifecycle | Gate 02 |
