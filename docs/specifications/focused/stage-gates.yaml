@@ -1,0 +1,189 @@
+version: 1
+project: Inkstead
+master_spec: docs/specifications/master-product-and-implementation-spec.md
+gap_register: docs/specifications/focused/gap-register.md
+evidence_root: docs/evidence
+
+statuses:
+  pass: PASS
+  fail: FAIL
+
+gates:
+  gate-00-foundation:
+    spec: docs/specifications/focused/02-cookiecutter-platform-foundation.md
+    requires: []
+    evidence: docs/evidence/gate-00-foundation.md
+    required_checks:
+      - cookiecutter_baseline_recorded
+      - django_system_check
+      - backend_tests
+      - ruff
+      - mypy
+      - pre_commit
+      - docker_local_build
+      - production_image_build
+      - frontend_lockfile_committed
+      - reproducible_frontend_install_defined
+
+  gate-01-security-auth:
+    spec: docs/specifications/focused/03-authentication-session-and-browser-security.md
+    requires:
+      - gate-00-foundation
+    evidence: docs/evidence/gate-01-security-auth.md
+    required_checks:
+      - public_registration_default_off
+      - offline_friendly_account_bootstrap
+      - admin_forced_through_allauth
+      - mfa_and_recovery_codes
+      - passkey_webauthn_path
+      - mfa_secrets_encrypted_at_rest
+      - trusted_proxy_rate_limit_config
+      - session_management
+      - csrf_online_recovery_flow
+      - security_headers
+      - csp_wasm_compatibility
+      - account_switch_vault_lock
+
+  gate-02-pwa-offline:
+    spec: docs/specifications/focused/05-pwa-local-storage-offline-and-update-lifecycle.md
+    requires:
+      - gate-01-security-auth
+    evidence: docs/evidence/gate-02-pwa-offline.md
+    required_checks:
+      - pwa_installable
+      - offline_shell_start
+      - indexeddb_schema
+      - persistent_storage_request
+      - storage_quota_failure
+      - multi_tab_locking
+      - privacy_screen_background
+      - service_worker_scope
+      - service_worker_safe_update
+      - service_worker_kill_switch
+
+  gate-03-crypto-vault:
+    spec: docs/specifications/focused/04-cryptography-key-management-and-recovery.md
+    requires:
+      - gate-02-pwa-offline
+    evidence: docs/evidence/gate-03-crypto-vault.md
+    required_checks:
+      - versioned_crypto_envelopes
+      - vault_master_key_random
+      - recovery_secret_flow
+      - wrapped_document_keys
+      - wrapped_blob_keys
+      - crypto_worker
+      - plaintext_indexeddb_canary
+      - corruption_detection
+      - key_rotation_fixture
+      - new_replica_key_bootstrap
+
+  gate-04-local-journal:
+    spec: docs/specifications/focused/06-journal-domain-editor-and-metadata.md
+    requires:
+      - gate-03-crypto-vault
+    evidence: docs/evidence/gate-04-local-journal.md
+    required_checks:
+      - offline_create_edit_delete_restore
+      - autosave_crash_consistency
+      - editor_sanitization
+      - metadata_no_url_title_leak
+      - date_timezone_semantics
+      - mobile_editor_flow
+      - accessibility_smoke
+
+  gate-05-crdt-sync:
+    spec: docs/specifications/focused/07-sync-crdt-replica-and-compaction-protocol.md
+    requires:
+      - gate-04-local-journal
+    evidence: docs/evidence/gate-05-crdt-sync.md
+    required_checks:
+      - automerge_per_entry
+      - durable_outbox_inbox
+      - session_authenticated_sync
+      - owner_authorization_idor_tests
+      - duplicate_idempotency
+      - interrupted_sync_recovery
+      - multi_replica_convergence
+      - wrapped_object_key_sync
+      - stale_replica_policy
+      - safe_snapshot_retention
+      - rollback_restore_detection
+
+  gate-06-attachments:
+    spec: docs/specifications/focused/08-attachments-media-and-file-security.md
+    requires:
+      - gate-05-crdt-sync
+    evidence: docs/evidence/gate-06-attachments.md
+    required_checks:
+      - client_side_encryption
+      - upload_size_limits
+      - safe_file_policy
+      - image_metadata_policy
+      - no_server_execution
+      - private_authorized_delivery
+      - interrupted_upload_recovery
+      - orphan_blob_cleanup
+      - attachment_plaintext_canary
+
+  gate-07-data-lifecycle:
+    spec: docs/specifications/focused/09-search-export-import-deletion-and-data-lifecycle.md
+    requires:
+      - gate-06-attachments
+    evidence: docs/evidence/gate-07-data-lifecycle.md
+    required_checks:
+      - encrypted_search_index
+      - search_query_not_server_visible
+      - client_side_export
+      - hostile_import_tests
+      - tombstone_retention
+      - permanent_delete_flow
+      - account_delete_cascade
+      - stale_replica_no_resurrection
+
+  gate-08-operations:
+    spec: docs/specifications/focused/10-deployment-tls-backup-and-operations.md
+    requires:
+      - gate-07-data-lifecycle
+    evidence: docs/evidence/gate-08-operations.md
+    required_checks:
+      - private_network_exposure
+      - https_required
+      - certificate_recovery
+      - least_privilege_containers
+      - secrets_policy
+      - postgres_backup
+      - encrypted_blob_backup
+      - backup_archive_protection
+      - destructive_restore_test
+      - restored_server_client_reconciliation
+
+  gate-09-assurance:
+    spec: docs/specifications/focused/11-testing-security-assurance-and-release-gates.md
+    requires:
+      - gate-08-operations
+    evidence: docs/evidence/gate-09-assurance.md
+    required_checks:
+      - plaintext_server_canary
+      - full_offline_e2e
+      - full_multi_replica_e2e
+      - browser_matrix
+      - asvs_matrix
+      - dependency_scan
+      - container_scan
+      - sbom
+      - threat_model_review
+      - migration_compatibility
+      - backup_restore_evidence
+
+  gate-10-v1:
+    spec: docs/specifications/focused/11-testing-security-assurance-and-release-gates.md
+    requires:
+      - gate-09-assurance
+    evidence: docs/evidence/gate-10-v1.md
+    required_checks:
+      - all_blocking_gaps_closed
+      - all_v1_flows_pass
+      - documentation_complete
+      - security_claims_reviewed
+      - release_artifacts_verified
